@@ -551,7 +551,13 @@ class WP_JSON_Authentication_OAuth1 extends WP_JSON_Authentication {
 
 		$params = array_merge( $params, $oauth_params );
 
-		$base_request_uri = rawurlencode( get_home_url( null, parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ) ) );
+		// Support WP blog roots that point to a folder and not just a domain
+        $home_url_path = parse_url(get_home_url (null,''), PHP_URL_PATH );
+        $request_uri_path = parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH );
+        if (substr($request_uri_path, 0, strlen($home_url_path)) == $home_url_path) {
+            $request_uri_path = substr($request_uri_path, strlen($home_url_path));
+        }
+        $base_request_uri = rawurlencode( get_home_url( null, $request_uri_path ) );
 
 		// get the signature provided by the consumer and remove it from the parameters prior to checking the signature
 		$consumer_signature = rawurldecode( $params['oauth_signature'] );
@@ -622,7 +628,7 @@ class WP_JSON_Authentication_OAuth1 extends WP_JSON_Authentication {
 				$query_params = $this->join_with_equals_sign( $param_value, $query_params, $param_key );
 			} else {
 				if ( $key ) {
-					$param_key = $key . '[' . $param_key . ']'; // Handle multi-dimensional array
+					$param_key = $key . '%5B' . $param_key . '%5D'; // Handle multi-dimensional array
 				}
 				$string = $param_key . '=' . $param_value; // join with equals sign
 				$query_params[] = urlencode( $string );
